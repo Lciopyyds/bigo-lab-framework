@@ -1,0 +1,8 @@
+# big outputs / local artifacts
+results/
+data/
+datasets/raw/
+*.jsonl
+*.log
+__pycache__/
+*.pyc

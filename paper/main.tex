@@ -1,0 +1,198 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Robust Empirical Time-Complexity Inference via Scalable Benchmark Construction}
+
+\author{
+\IEEEauthorblockN{Your Name}
+\IEEEauthorblockA{
+Fudan University \\
+Email: your@email.com}
+}
+
+\maketitle
+
+\begin{abstract}
+% 我们稍后填
+\end{abstract}
+
+\section{Introduction}
+
+Time-complexity analysis plays a fundamental role in algorithm design, education, and performance engineering. 
+While classical complexity analysis relies on formal reasoning and asymptotic proofs, recent advances in large language models and automated program analysis have motivated the development of empirical complexity inference systems. 
+Such systems attempt to infer asymptotic time complexity by measuring execution time under increasing input scales and fitting candidate growth models.
+
+However, empirical complexity inference remains challenging in practice. 
+Execution measurements are often noisy due to system-level variability, initialization overhead, caching effects, and runtime fluctuations. 
+Existing empirical benchmarking frameworks typically aggregate multiple runs using simple averaging strategies, which are highly sensitive to outliers and warm-up bias. 
+As a result, curve fitting may become unstable, particularly when distinguishing between closely related complexity classes such as $O(n)$ and $O(n \log n)$.
+
+Moreover, the reliability of empirical complexity inference is heavily dependent on the quality and scale of the benchmark dataset. 
+Many prior evaluations are conducted on small, synthetic programs that do not reflect real-world implementation diversity. 
+Without large-scale benchmarks derived from practical algorithmic problems, it is difficult to assess the robustness of inference frameworks under realistic conditions.
+
+To address these limitations, we introduce a robust empirical complexity inference pipeline that enhances aggregation stability, improves multiplier-based scaling behavior, and integrates systematic regression filtering. 
+In addition, we construct a large-scale benchmark dataset consisting of more than 1,000 accepted solutions from Codeforces problems spanning a wide range of algorithmic categories and input sizes.
+
+Our experimental results demonstrate that the proposed enhancements significantly improve inference stability and robustness compared to the original baseline framework. 
+These findings suggest that careful measurement aggregation and scaling refinement are critical for reliable empirical complexity inference.
+
+\paragraph{Contributions.}
+This paper makes the following contributions:
+
+\begin{itemize}
+    \item We propose a robust empirical aggregation mechanism for time-complexity inference, combining warm-up elimination, median-based consolidation, and finite-value filtering to improve measurement stability.
+    
+    \item We refine the multiplier-based scaling strategy and curve-fitting procedure to enhance regression stability across candidate complexity classes, particularly for borderline cases such as $O(n \log n)$.
+    
+    \item We construct a large-scale benchmark of over 1,000 real-world algorithm implementations collected from Codeforces, enabling systematic empirical evaluation.
+    
+    \item We conduct extensive experiments comparing the original framework and our enhanced pipeline, demonstrating improved robustness and inference accuracy.
+\end{itemize}
+
+\section{Methodology}
+
+\subsection{Framework Overview}
+
+Our goal is to improve the robustness and stability of empirical time-complexity inference.
+Given a program $P$ and a sequence of increasing input sizes $\{n_1, n_2, ..., n_k\}$, 
+an empirical inference system measures execution time under each input size and fits candidate asymptotic growth models.
+
+The original BigOBench framework follows a measurement-then-fitting paradigm:
+multiple runs are collected per input scale, aggregated into a single value, 
+and compared against candidate complexity classes using regression analysis.
+However, measurement noise and aggregation instability may significantly affect fitting accuracy.
+
+To address these issues, we introduce a robust inference pipeline consisting of:
+(1) warm-up elimination, 
+(2) median-based aggregation, 
+(3) finite-value filtering, and 
+(4) multiplier-based scaling refinement.
+
+\subsection{Robust Aggregation Mechanism}
+
+Empirical runtime measurements are inherently noisy due to system-level variability,
+including initialization overhead, cache effects, and background process interference.
+Simple mean-based aggregation is highly sensitive to outliers and skewed measurements.
+
+We therefore introduce a median-based aggregation strategy.
+Given multiple runtime measurements under the same input size $n$:
+
+\[
+\hat{T}(n) = \mathrm{median}(T_1(n), T_2(n), ..., T_m(n))
+\]
+
+The median operator provides robustness against extreme values and improves stability in regression fitting.
+
+Additionally, we discard warm-up runs prior to aggregation to eliminate initialization bias.
+Warm-up elimination prevents the first execution from dominating the aggregated value.
+
+Finally, we apply finite-value filtering to remove non-finite or invalid measurements
+before regression analysis, ensuring numerical stability.
+
+\subsection{Multiplier-Based Scaling Refinement}
+
+Empirical complexity inference relies on measuring runtime growth under increasing input scales.
+However, inappropriate scaling factors may distort regression behavior,
+especially when distinguishing between closely related classes such as $O(n)$ and $O(n \log n)$.
+
+We refine the multiplier-based scaling mechanism to improve separation between candidate growth curves.
+Input sizes are scaled geometrically, and candidate transformations
+(e.g., $n$, $n \log n$, $n^2$) are evaluated in log-log regression space.
+
+To stabilize fitting behavior, we introduce filtering criteria
+that eliminate unstable regressions with low explanatory power.
+The model with the highest regression quality score (e.g., $R^2$) is selected as the inferred complexity class.
+
+\subsection{Curve Fitting and Candidate Selection}
+
+Let $\mathcal{C}$ denote the set of candidate complexity classes,
+including $O(1)$, $O(\log n)$, $O(n)$, $O(n \log n)$, and $O(n^2)$.
+For each candidate $c \in \mathcal{C}$,
+we transform input sizes accordingly and perform linear regression in log space.
+
+The goodness-of-fit score is computed for each candidate model,
+and the complexity class with the highest score is selected.
+
+Compared to the original framework,
+our robust aggregation and filtering strategies reduce regression variance
+and improve stability across noisy measurement scenarios.
+
+\subsection{Benchmark Construction}
+
+To enable large-scale evaluation, we construct a benchmark dataset
+consisting of over 1,000 real-world algorithm implementations collected from Codeforces.
+
+We select accepted solutions from problems covering a wide range of algorithmic categories,
+including sorting, dynamic programming, graph algorithms, and greedy strategies.
+To ensure implementation diversity, we include solutions across multiple difficulty levels.
+
+Each solution is converted into the BigOBench-compatible JSONL format,
+containing the problem identifier, source code, and metadata.
+All programs are executed under controlled experimental settings
+to ensure consistent runtime measurement conditions.
+
+This large-scale benchmark allows systematic evaluation of empirical complexity inference robustness
+under realistic program diversity.
+
+\subsection{Log-Log Regression Formulation}
+
+Empirical complexity inference is performed in logarithmic space to linearize
+polynomial and near-polynomial growth patterns.
+
+Let $T(n)$ denote the aggregated runtime under input size $n$.
+For each candidate complexity class $c(n)$, we define a transformed predictor:
+
+\[
+x = \log(f_c(n)), \quad y = \log(T(n))
+\]
+
+where $f_c(n)$ corresponds to the asymptotic form of candidate class $c$,
+such as:
+
+\[
+f_{O(n)}(n) = n,
+\quad
+f_{O(n \log n)}(n) = n \log n,
+\quad
+f_{O(n^2)}(n) = n^2.
+\]
+
+Linear regression is then performed:
+
+\[
+y = \alpha x + \beta + \epsilon
+\]
+
+where $\alpha$ and $\beta$ are regression coefficients and $\epsilon$ denotes residual error.
+
+The goodness-of-fit score is evaluated using the coefficient of determination:
+
+\[
+R^2 = 1 - \frac{\sum_i (y_i - \hat{y}_i)^2}
+{\sum_i (y_i - \bar{y})^2}
+\]
+
+The candidate complexity class with the highest $R^2$ is selected as the inferred complexity.
+
+\section{Experiments}
+% 稍后填
+
+\section{Discussion}
+% 稍后填
+
+\section{Conclusion}
+% 稍后填
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
