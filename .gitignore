@@ -1,4 +1,25 @@
-# big outputs / local artifacts
+# Large outputs
+results/
+data/
+datasets/raw/
+*.jsonl
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS junk
+.DS_Store
+
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.synctex.gz# big outputs / local artifacts
 results/
 data/
 datasets/raw/
